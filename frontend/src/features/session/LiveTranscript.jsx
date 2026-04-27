@@ -4,6 +4,7 @@ import { Mic, Send, StopCircle, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import Waveform from './Waveform';
 import StreamingText from './StreamingText';
+import './LiveTranscript.css';
 
 const LiveTranscript = ({ role, sessionId, isRecording, setIsRecording, readOnly = false }) => {
     const [editingId, setEditingId] = useState(null);
@@ -130,16 +131,16 @@ const LiveTranscript = ({ role, sessionId, isRecording, setIsRecording, readOnly
     };
 
     return (
-        <div style={styles.chatContainer}>
+        <div className="chat-container">
             {/* Session Header */}
-            <div style={styles.sessionHeader}>
-                <div style={styles.dateBadge}>
+            <div className="session-header">
+                <div className="date-badge">
                     {getFormattedDate()}
                 </div>
                 {!readOnly && (
                     <button 
                         onClick={handleClearChat}
-                        style={styles.clearBtn}
+                        className="clear-btn-header"
                         title="Clear Chat"
                     >
                         <Trash2 size={16} />
@@ -148,15 +149,15 @@ const LiveTranscript = ({ role, sessionId, isRecording, setIsRecording, readOnly
             </div>
 
             {/* Chat Area */}
-            <div ref={scrollRef} style={styles.messageArea}>
+            <div ref={scrollRef} className="message-area">
                 <AnimatePresence initial={false}>
                     {messages.map((msg) => (
                         <motion.div 
                             key={msg.id}
                             initial={{ opacity: 0, scale: 0.9, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
+                            className="bubble-wrapper"
                             style={{
-                                ...styles.bubbleWrapper,
                                 alignSelf: msg.sender === 'therapist' ? 'flex-start' : 'flex-end'
                             }}
                         >
@@ -167,8 +168,8 @@ const LiveTranscript = ({ role, sessionId, isRecording, setIsRecording, readOnly
                                         setEditText(msg.text);
                                     }
                                 }}
+                                className="bubble"
                                 style={{
-                                    ...styles.bubble,
                                     background: msg.sender === 'therapist' ? 'var(--bubble-therapist)' : 'var(--bubble-client)',
                                     borderRadius: msg.sender === 'therapist' ? '0 12px 12px 12px' : '12px 0 12px 12px',
                                     cursor: readOnly ? 'default' : 'pointer'
@@ -187,13 +188,13 @@ const LiveTranscript = ({ role, sessionId, isRecording, setIsRecording, readOnly
                                             }
                                             if (e.key === 'Escape') setEditingId(null);
                                         }}
-                                        style={styles.editInput}
+                                        className="edit-input"
                                     />
                                 ) : (
                                     <>
-                                        <p style={styles.messageText}>{msg.text}</p>
-                                        <div style={styles.bubbleMeta}>
-                                            <span style={styles.timestamp}>{msg.timestamp}</span>
+                                        <p className="message-text">{msg.text}</p>
+                                        <div className="bubble-meta">
+                                            <span className="timestamp">{msg.timestamp}</span>
                                         </div>
                                     </>
                                 )}
@@ -208,30 +209,31 @@ const LiveTranscript = ({ role, sessionId, isRecording, setIsRecording, readOnly
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0 }}
+                            className="bubble-wrapper"
                             style={{
-                                ...styles.bubbleWrapper,
                                 alignSelf: sender === 'therapist' ? 'flex-start' : 'flex-end'
                             }}
                         >
-                            <div style={{
-                                ...styles.activeBubble,
-                                background: sender === 'therapist' ? 'var(--bubble-therapist)' : 'var(--bubble-client)',
-                                borderRadius: sender === 'therapist' ? '0 12px 12px 12px' : '12px 0 12px 12px',
-                                border: '1px solid var(--card-border)'
-                            }}>
-                                <div style={styles.activeHeader}>
-                                    <div style={styles.recordingStatus}>
+                            <div 
+                                className="active-bubble"
+                                style={{
+                                    background: sender === 'therapist' ? 'var(--bubble-therapist)' : 'var(--bubble-client)',
+                                    borderRadius: sender === 'therapist' ? '0 12px 12px 12px' : '12px 0 12px 12px'
+                                }}
+                            >
+                                <div className="active-header">
+                                    <div className="recording-status">
                                         <div className="pulse-dot" />
                                         <span>{formatDuration(data.duration)}</span>
                                     </div>
                                     <Waveform isRecording={true} color={sender === 'therapist' ? 'var(--text-muted)' : 'var(--accent)'} />
                                 </div>
                                 
-                                <div style={styles.liveTextContainer}>
+                                <div className="live-text-container">
                                     {data.text ? (
                                         <StreamingText text={data.text} />
                                     ) : (
-                                        <span style={styles.listeningPlaceholder}>Listening...</span>
+                                        <span className="listening-placeholder">Listening...</span>
                                     )}
                                 </div>
                             </div>
@@ -242,10 +244,10 @@ const LiveTranscript = ({ role, sessionId, isRecording, setIsRecording, readOnly
 
             {/* Bottom Controls - Hidden in Read-Only mode */}
             {!readOnly && (
-                <div style={styles.controlPanel}>
-                    <div style={styles.controlsGrid}>
+                <div className="control-panel">
+                    <div className="controls-grid">
                         {/* Therapist Control */}
-                        <div style={styles.micSection}>
+                        <div className="mic-section">
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
@@ -254,19 +256,19 @@ const LiveTranscript = ({ role, sessionId, isRecording, setIsRecording, readOnly
                                     window.dispatchEvent(new CustomEvent('change_role', {detail: 'therapist'}));
                                     setIsRecording(!isRecording);
                                 }}
+                                className="mic-button"
                                 style={{
-                                    ...styles.micButton,
                                     background: isRecording && role === 'therapist' ? '#ea4335' : '#2a3942',
                                     boxShadow: isRecording && role === 'therapist' ? '0 0 20px rgba(234,67,53,0.4)' : 'none'
                                 }}
                             >
                                 {isRecording && role === 'therapist' ? <StopCircle color="white" /> : <Mic color={role === 'therapist' ? "#fff" : "#8696a0"} />}
                             </motion.button>
-                            <span style={styles.micLabel}>Therapist</span>
+                            <span className="mic-label">Therapist</span>
                         </div>
     
                         {/* Client Control */}
-                        <div style={styles.micSection}>
+                        <div className="mic-section">
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
@@ -275,33 +277,33 @@ const LiveTranscript = ({ role, sessionId, isRecording, setIsRecording, readOnly
                                     window.dispatchEvent(new CustomEvent('change_role', {detail: 'client'}));
                                     setIsRecording(!isRecording);
                                 }}
+                                className="mic-button"
                                 style={{
-                                    ...styles.micButton,
                                     background: isRecording && role === 'client' ? '#ea4335' : '#005c4b',
                                     boxShadow: isRecording && role === 'client' ? '0 0 20px rgba(234,67,53,0.4)' : 'none'
                                 }}
                             >
                                 {isRecording && role === 'client' ? <StopCircle color="white" /> : <Mic color={role === 'client' ? "#fff" : "#00a884"} />}
                             </motion.button>
-                            <span style={styles.micLabel}>Client</span>
+                            <span className="mic-label">Client</span>
                         </div>
 
                         {/* Clear Chat Button */}
                         {!readOnly && (
-                            <div style={styles.micSection}>
+                            <div className="mic-section">
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={handleClearChat}
+                                    className="mic-button"
                                     style={{
-                                        ...styles.micButton,
                                         background: 'rgba(239, 68, 68, 0.1)',
                                         border: '1px solid rgba(239, 68, 68, 0.2)'
                                     }}
                                 >
                                     <Trash2 size={24} color="#ef4444" />
                                 </motion.button>
-                                <span style={{...styles.micLabel, color: '#ef4444'}}>Clear Chat</span>
+                                <span className="mic-label" style={{color: '#ef4444'}}>Clear</span>
                             </div>
                         )}
                     </div>
@@ -326,169 +328,5 @@ const LiveTranscript = ({ role, sessionId, isRecording, setIsRecording, readOnly
     );
 };
 
-const styles = {
-    chatContainer: {
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'var(--bg-main)',
-        borderRadius: '24px',
-        overflow: 'hidden',
-        border: '1px solid var(--card-border)',
-        boxShadow: 'var(--shadow)'
-    },
-    sessionHeader: {
-        padding: '12px',
-        display: 'flex',
-        justifyContent: 'center',
-        background: 'var(--card-bg)',
-        position: 'relative'
-    },
-    dateBadge: {
-        background: 'var(--input-bg)',
-        padding: '6px 12px',
-        borderRadius: '8px',
-        fontSize: '11px',
-        color: 'var(--text-muted)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px',
-        border: '1px solid var(--card-border)'
-    },
-    messageArea: {
-        flex: 1,
-        overflowY: 'auto',
-        padding: '24px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        backgroundColor: 'var(--bg-main)',
-    },
-    bubbleWrapper: {
-        maxWidth: '80%',
-        display: 'flex',
-        flexDirection: 'column'
-    },
-    bubble: {
-        padding: '8px 12px 6px 12px',
-        position: 'relative',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-        minWidth: '60px',
-        border: '1px solid var(--card-border)'
-    },
-    messageText: {
-        margin: 0,
-        fontSize: '16px',
-        lineHeight: '1.4',
-        color: 'var(--text-main)',
-        fontFamily: 'Inter, sans-serif'
-    },
-    bubbleMeta: {
-        display: 'flex',
-        justifyContent: 'flex-end',
-        marginTop: '2px'
-    },
-    timestamp: {
-        fontSize: '10px',
-        color: 'var(--text-muted)',
-        opacity: 0.6
-    },
-    activeBubble: {
-        padding: '12px',
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-        boxShadow: 'var(--shadow)',
-        minWidth: '200px',
-        border: '1px solid var(--card-border)'
-    },
-    activeHeader: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottom: '1px solid var(--card-border)',
-        paddingBottom: '6px',
-        marginBottom: '4px'
-    },
-    recordingStatus: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        fontSize: '11px',
-        color: '#ef4444',
-        fontWeight: '600'
-    },
-    liveTextContainer: {
-        fontSize: '15px',
-        color: 'var(--text-main)',
-        fontStyle: 'italic'
-    },
-    listeningPlaceholder: {
-        color: 'var(--text-muted)',
-        opacity: 0.3,
-        fontSize: '14px'
-    },
-    clearBtn: {
-        position: 'absolute',
-        right: '24px',
-        background: 'rgba(239, 68, 68, 0.1)',
-        color: '#ef4444',
-        border: '1px solid rgba(239, 68, 68, 0.2)',
-        borderRadius: '8px',
-        width: '32px',
-        height: '32px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-        padding: 0
-    },
-    controlPanel: {
-        padding: '20px 30px',
-        background: '#202c33',
-        borderTop: '1px solid rgba(255,255,255,0.05)'
-    },
-    controlsGrid: {
-        display: 'flex',
-        justifyContent: 'space-around',
-        alignItems: 'center'
-    },
-    micSection: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '8px'
-    },
-    micLabel: {
-        fontSize: '12px',
-        color: '#8696a0',
-        fontWeight: '600',
-        textTransform: 'uppercase'
-    },
-    micButton: {
-        width: '64px',
-        height: '64px',
-        borderRadius: '50%',
-        border: 'none',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-    },
-    editInput: {
-        width: '100%',
-        background: 'transparent',
-        border: 'none',
-        color: '#fff',
-        fontSize: '16px',
-        fontFamily: 'Inter, sans-serif',
-        resize: 'none',
-        outline: 'none',
-        padding: '0',
-        minHeight: '40px'
-    }
-};
-
 export default LiveTranscript;
+

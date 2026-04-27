@@ -168,3 +168,30 @@ body {
   background: var(--primary);
   color: white;
 }
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+  .premium-card {
+    padding: 1.5rem;
+  }
+  .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  .theme-toggle {
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+
