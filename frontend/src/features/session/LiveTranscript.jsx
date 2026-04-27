@@ -5,6 +5,7 @@ import axios from 'axios';
 import Waveform from './Waveform';
 import StreamingText from './StreamingText';
 import './LiveTranscript.css';
+import { API_URL } from '../../config';
 
 const LiveTranscript = ({ role, sessionId, isRecording, setIsRecording, readOnly = false }) => {
     const [editingId, setEditingId] = useState(null);
@@ -18,7 +19,7 @@ const LiveTranscript = ({ role, sessionId, isRecording, setIsRecording, readOnly
     const handleClearChat = async () => {
         if (!window.confirm("Are you sure you want to clear all messages? This cannot be undone.")) return;
         try {
-            await axios.delete(`http://localhost:8000/api/session/${sessionId}/transcript`);
+            await axios.delete(`${API_URL}/api/session/${sessionId}/transcript`);
             setMessages([]);
             setActiveTranscripts({});
         } catch (err) {
@@ -32,7 +33,7 @@ const LiveTranscript = ({ role, sessionId, isRecording, setIsRecording, readOnly
         
         const fetchHistory = async () => {
             try {
-                const response = await fetch(`http://localhost:8000/api/session/${sessionId}/transcript`);
+                const response = await fetch(`${API_URL}/api/session/${sessionId}/transcript`);
                 if (response.ok) {
                     const data = await response.json();
                     setMessages(data);
@@ -47,7 +48,7 @@ const LiveTranscript = ({ role, sessionId, isRecording, setIsRecording, readOnly
 
     const handleSaveEdit = async (id, text) => {
         try {
-            const response = await fetch(`http://localhost:8000/api/session/transcript/${id}`, {
+            const response = await fetch(`${API_URL}/api/session/transcript/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text })

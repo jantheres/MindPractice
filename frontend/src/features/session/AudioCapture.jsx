@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { WS_URL } from '../../config';
 
 const SessionAudioCapture = ({ 
     isRecording, 
@@ -36,8 +37,7 @@ const SessionAudioCapture = ({
     }, [isRecording]);
 
     const connectSocket = () => {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//localhost:8000/api/session/ws/${sessionId}?role=${role}`;
+        const wsUrl = `${WS_URL}/api/session/ws/${sessionId}?role=${role}`;
         const ws = new WebSocket(wsUrl);
         socketRef.current = ws;
 

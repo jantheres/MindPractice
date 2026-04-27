@@ -5,6 +5,7 @@ import LiveTranscript from './features/session/LiveTranscript';
 import SessionAudioCapture from './features/session/AudioCapture';
 import SOAPEditor from './features/session/SOAPEditor';
 import './App.css';
+import { API_URL } from './config';
 
 const APPOINTMENT_ID = "550e8400-e29b-41d4-a716-446655440000"; 
 const THERAPIST_ID = "9971cc3d-a0a5-4c80-a43e-b77daac7f6a0"; 
@@ -25,7 +26,7 @@ const App = () => {
 
   const handleConsentComplete = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/session/start/${APPOINTMENT_ID}?therapist_id=${THERAPIST_ID}&client_id=${THERAPIST_ID}`, {
+      const response = await fetch(`${API_URL}/api/session/start/${APPOINTMENT_ID}?therapist_id=${THERAPIST_ID}&client_id=${THERAPIST_ID}`, {
         method: 'POST'
       });
       const data = await response.json();

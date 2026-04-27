@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ShieldCheck, UserCheck, Stethoscope, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import { API_URL } from '../../config';
 
 const ConsentModal = ({ appointmentId, therapistId, role, onConsentComplete }) => {
     const [loading, setLoading] = useState(false);
@@ -11,7 +12,7 @@ const ConsentModal = ({ appointmentId, therapistId, role, onConsentComplete }) =
         
         setLoading(true);
         try {
-            await axios.post(`http://localhost:8000/api/session/${appointmentId}/consent`, {
+            await axios.post(`${API_URL}/api/session/${appointmentId}/consent`, {
                 user_type: userType,
                 therapist_id: therapistId
             });

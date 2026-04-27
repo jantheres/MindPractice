@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Sparkles, Save, CheckCircle, XCircle, Loader2, Lock, Eye } from 'lucide-react';
 import axios from 'axios';
 import './SOAPEditor.css';
+import { API_URL } from '../../config';
 
 const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patientName = "Ajay", sessionId }) => {
     const [soapData, setSoapData] = useState(null);
@@ -15,7 +16,7 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
     const handleValidate = async () => {
         setValidating(true);
         try {
-            const res = await axios.post(`http://localhost:8000/api/session/${appointmentId}/soap/validate`);
+            const res = await axios.post(`${API_URL}/api/session/${appointmentId}/soap/validate`);
             setValidationData(res.data);
         } catch (err) {
             console.error("Validation failed", err);
@@ -34,8 +35,8 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
     const fetchSoap = async (retryCount = 0) => {
         try {
             const url = sessionId 
-                ? `http://localhost:8000/api/session/${appointmentId}/soap?role=${role}&session_id=${sessionId}`
-                : `http://localhost:8000/api/session/${appointmentId}/soap?role=${role}`;
+                ? `${API_URL}/api/session/${appointmentId}/soap?role=${role}&session_id=${sessionId}`
+                : `${API_URL}/api/session/${appointmentId}/soap?role=${role}`;
             const res = await axios.get(url);
             setSoapData(res.data);
             setError(null);
@@ -67,8 +68,8 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
         setLoading(true);
         try {
             const url = sessionId 
-                ? `http://localhost:8000/api/session/${appointmentId}/soap/generate?patient_name=${patientName}&session_id=${sessionId}`
-                : `http://localhost:8000/api/session/${appointmentId}/soap/generate?patient_name=${patientName}`;
+                ? `${API_URL}/api/session/${appointmentId}/soap/generate?patient_name=${patientName}&session_id=${sessionId}`
+                : `${API_URL}/api/session/${appointmentId}/soap/generate?patient_name=${patientName}`;
             const res = await axios.post(url);
             setSoapData(res.data);
             setError(null);
@@ -87,8 +88,8 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
         setSaving(true);
         try {
             const url = sessionId 
-                ? `http://localhost:8000/api/session/${appointmentId}/soap?session_id=${sessionId}`
-                : `http://localhost:8000/api/session/${appointmentId}/soap`;
+                ? `${API_URL}/api/session/${appointmentId}/soap?session_id=${sessionId}`
+                : `${API_URL}/api/session/${appointmentId}/soap`;
             await axios.patch(url, {
                 ...soapData,
                 status: status
@@ -106,8 +107,8 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
         setSaving(true);
         try {
             const url = sessionId 
-                ? `http://localhost:8000/api/session/${appointmentId}/soap?session_id=${sessionId}`
-                : `http://localhost:8000/api/session/${appointmentId}/soap`;
+                ? `${API_URL}/api/session/${appointmentId}/soap?session_id=${sessionId}`
+                : `${API_URL}/api/session/${appointmentId}/soap`;
             await axios.patch(url, soapData);
             alert("Changes saved successfully.");
         } catch (err) {
