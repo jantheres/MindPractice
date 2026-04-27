@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+websockets
+google-cloud-speech
+google-genai
+asyncpg
+python-jose[cryptography]
+python-dotenv
+httpx
+sarvamai
+ 
