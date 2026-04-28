@@ -57,6 +57,6 @@ CREATE TABLE IF NOT EXISTS soap_notes (
 );
 
 -- Index for performance
-CREATE INDEX idx_transcript_session ON transcript_chunks(session_id);
-CREATE INDEX idx_soap_appointment ON soap_notes(appointment_id);
-CREATE INDEX idx_consent_appointment ON consent_log(appointment_id);
+CREATE INDEX IF NOT EXISTS idx_transcript_session ON transcript_chunks(session_id);
+CREATE INDEX IF NOT EXISTS idx_soap_appointment ON soap_notes(appointment_id);
+CREATE INDEX IF NOT EXISTS idx_consent_appointment ON consent_log(appointment_id);
