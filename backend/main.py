@@ -11,11 +11,23 @@ app = FastAPI(title="MindPractice API")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust in production
-    allow_credentials=True,
+    allow_origins=["*"],  # For production, replace with specific origins
+    allow_credentials=False, # Changed to False if origins is '*' to avoid browser blocks
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+import logging
+logger = logging.getLogger(__name__)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    logger.error(f"Global error: {exc}", exc_info=True)
+    return {
+        "error": "Internal Server Error",
+        "message": str(exc),
+        "detail": "Check server logs for more information."
+    }, 500
 
 # Root endpoint
 @app.get("/")

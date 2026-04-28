@@ -68,12 +68,17 @@ manager = ConnectionManager()
 @router.post("/start/{appointment_id}")
 async def start_session(appointment_id: str, therapist_id: str, client_id: str):
     """Returns the existing active session or creates a NEW unique session for an appointment."""
-    conn = await get_db_connection()
+    logger.info(f"Start session request: appt={appointment_id}, therapist={therapist_id}, client={client_id}")
+    try:
+        conn = await get_db_connection()
+    except Exception as e:
+        logger.error(f"Database connection failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
+
     try:
         appt_uuid = uuid.UUID(appointment_id)
         
         # 1. Check for an EXISTING ACTIVE session only
-        # We only want to join if the session hasn't been finalized yet.
         active_session = await conn.fetchrow(
             "SELECT id, status FROM sessions WHERE appointment_id = $1 AND status = 'active' LIMIT 1",
             appt_uuid
@@ -84,7 +89,6 @@ async def start_session(appointment_id: str, therapist_id: str, client_id: str):
             return {"session_id": str(active_session['id']), "status": "active"}
 
         # 2. Create new session if no active session found
-        # (This allows starting a new session even if a previous one was completed)
         session_id = uuid.uuid4()
         await conn.execute(
             """
@@ -95,6 +99,9 @@ async def start_session(appointment_id: str, therapist_id: str, client_id: str):
         )
         logger.info(f"Created new session {session_id} for appt {appointment_id}")
         return {"session_id": str(session_id), "status": "active"}
+    except Exception as e:
+        logger.error(f"Error in start_session: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         await conn.close()
 
