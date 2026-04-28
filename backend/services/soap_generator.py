@@ -6,8 +6,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configure Gemini Client
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+# Lazy client initialization
+_client = None
+
+def get_gemini_client():
+    global _client
+    if _client is None:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY not found in environment variables. Please check your .env file.")
+        _client = genai.Client(api_key=api_key)
+    return _client
 
 def generate_soap_note(transcript: str, patient_name: str = "The patient") -> dict:
     """
@@ -38,8 +47,9 @@ def generate_soap_note(transcript: str, patient_name: str = "The patient") -> di
 
     try:
         print(f"DEBUG: Generating SOAP for {patient_name} (Transcript Length: {len(transcript)})")
+        client = get_gemini_client()
         response = client.models.generate_content(
-            model="gemini-3-flash-preview", 
+            model="gemini-2.0-flash", 
             contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
