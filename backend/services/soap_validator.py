@@ -1,6 +1,7 @@
 import os
 import json
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from typing import Dict, List, Optional
 from dotenv import load_dotenv
 
@@ -8,16 +9,15 @@ load_dotenv()
 
 class SOAPValidator:
     def __init__(self):
-        self._model = None
+        self._client = None
 
-    def _get_model(self):
-        if self._model is None:
+    def _get_client(self):
+        if self._client is None:
             api_key = os.getenv("GEMINI_API_KEY")
             if not api_key:
                 raise ValueError("GEMINI_API_KEY not found in environment variables.")
-            genai.configure(api_key=api_key)
-            self._model = genai.GenerativeModel('gemini-2.0-flash')
-        return self._model
+            self._client = genai.Client(api_key=api_key)
+        return self._client
 
     async def validate_soap(self, soap_note: Dict[str, str], transcript: List[Dict[str, str]]) -> Dict:
         """
@@ -65,8 +65,12 @@ class SOAPValidator:
         """
 
         try:
-            model = self._get_model()
-            response = model.generate_content(prompt)
+            client = self._get_client()
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=prompt
+            )
+            
             # Handle potential markdown wrapping
             text = response.text.strip()
             if text.startswith("```json"):
