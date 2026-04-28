@@ -34,6 +34,16 @@ async def global_exception_handler(request, exc):
 async def root():
     return {"message": "MindPractice Backend API is running"}
 
+@app.post("/api/init-db")
+async def init_db():
+    """Temporary endpoint to initialize the database schema."""
+    from migrate import migrate
+    try:
+        await migrate()
+        return {"status": "success", "message": "Database schema applied successfully"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}, 500
+
 # Include routers
 from routers import consent, soap, session_ws
 
