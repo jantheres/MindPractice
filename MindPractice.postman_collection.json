@@ -1,0 +1,162 @@
+{
+	"info": {
+		"_postman_id": "mindpractice-api-collection-v2",
+		"name": "MindPractice API (Multi-Env)",
+		"description": "Collection for testing MindPractice clinical notes. \n\nProduction URLs provided:\n- Backend/Frontend: mindpractice-production.up.railway.app\n- Alternative: virtuous-reflection-production-433e.up.railway.app\n- DB: shuttle.proxy.rlwy.net (PostgreSQL)\n\nChange the 'baseUrl' variable to switch environments.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get Dashboard Sessions",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/dashboard/sessions",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"dashboard",
+						"sessions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Generate SOAP Note",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/session/550e8400-e29b-41d4-a716-446655440000/soap/generate",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"session",
+						"550e8400-e29b-41d4-a716-446655440000",
+						"soap",
+						"generate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get SOAP Note",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/session/550e8400-e29b-41d4-a716-446655440000/soap?note_type=soap",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"session",
+						"550e8400-e29b-41d4-a716-446655440000",
+						"soap"
+					],
+					"query": [
+						{
+							"key": "note_type",
+							"value": "soap"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update SOAP Note",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"subjective\": \"Updated subjective notes\",\n    \"objective\": \"Updated objective notes\",\n    \"assessment\": \"Updated assessment\",\n    \"plan\": \"Updated plan\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/session/550e8400-e29b-41d4-a716-446655440000/soap?note_type=soap",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"session",
+						"550e8400-e29b-41d4-a716-446655440000",
+						"soap"
+					],
+					"query": [
+						{
+							"key": "note_type",
+							"value": "soap"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Generate DAP Note",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/session/550e8400-e29b-41d4-a716-446655440000/dap/generate",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"session",
+						"550e8400-e29b-41d4-a716-446655440000",
+						"dap",
+						"generate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Generate Summary",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/session/550e8400-e29b-41d4-a716-446655440000/summary/generate",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"session",
+						"550e8400-e29b-41d4-a716-446655440000",
+						"summary",
+						"generate"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://mindpractice-production.up.railway.app",
+			"type": "string"
+		}
+
+	]
+}

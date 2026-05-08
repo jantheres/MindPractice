@@ -60,3 +60,7 @@ CREATE TABLE IF NOT EXISTS soap_notes (
 CREATE INDEX IF NOT EXISTS idx_transcript_session ON transcript_chunks(session_id);
 CREATE INDEX IF NOT EXISTS idx_soap_appointment ON soap_notes(appointment_id);
 CREATE INDEX IF NOT EXISTS idx_consent_appointment ON consent_log(appointment_id);
+
+-- Migration: Add note_type to soap_notes if it doesn't exist
+ALTER TABLE soap_notes ADD COLUMN IF NOT EXISTS note_type VARCHAR(20) DEFAULT 'soap';
+
