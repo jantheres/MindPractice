@@ -4,6 +4,7 @@ import { Shield, Users, Mic, CheckCircle, ArrowRight, Sun, Moon, StopCircle } fr
 import LiveTranscript from './features/session/LiveTranscript';
 import SessionAudioCapture from './features/session/AudioCapture';
 import SOAPEditor from './features/session/SOAPEditor';
+import TherapistDashboard from './pages/TherapistDashboard';
 import './App.css';
 import { API_URL } from './config';
 
@@ -103,8 +104,9 @@ const App = () => {
                 <div className="role-grid">
                   <button 
                     className="btn glass role-card"
-                    onClick={() => { setRole('therapist'); setStep('consent'); }}
+                    onClick={() => { setRole('therapist'); setStep('dashboard'); }}
                   >
+
                     <div className="role-icon-wrapper">
                       <Shield color="var(--primary)" size={28} />
                     </div>
@@ -133,7 +135,20 @@ const App = () => {
             </motion.div>
           )}
 
+          {step === 'dashboard' && (
+            <TherapistDashboard onSelectSession={(session) => {
+              if (session) {
+                setSessionId(session.session_id);
+                setStep('completed');
+              } else {
+                setStep('consent');
+              }
+            }} />
+          )}
+
+
           {step === 'consent' && (
+
             <motion.div 
               key="consent"
               initial={{ opacity: 0, scale: 0.95 }}

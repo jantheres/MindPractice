@@ -221,3 +221,34 @@
         font-size: 20px;
     }
 }
+
+.soap-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--card-border);
+    padding-bottom: 12px;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    border-radius: 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+    color: var(--text-main);
+    background: var(--primary);
+    border-color: var(--primary);
+}
+

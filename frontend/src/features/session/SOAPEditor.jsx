@@ -6,12 +6,19 @@ import './SOAPEditor.css';
 import { API_URL } from '../../config';
 
 const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patientName = "Ajay", sessionId }) => {
-    const [soapData, setSoapData] = useState(null);
+    const [activeTab, setActiveTab] = useState('soap');
+    const [allNotes, setAllNotes] = useState({ soap: null, dap: null, summary: null });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [validationData, setValidationData] = useState(null);
     const [validating, setValidating] = useState(false);
+
+    const fieldsConfig = {
+        soap: ['subjective', 'objective', 'assessment', 'plan'],
+        dap: ['data', 'assessment', 'plan'],
+        summary: ['summary', 'key_issues', 'progress', 'follow_up_plans']
+    };
 
     const handleValidate = async () => {
         setValidating(true);
@@ -27,39 +34,61 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
 
     const applyVerified = () => {
         if (validationData?.verified_version) {
-            setSoapData({ ...soapData, ...validationData.verified_version });
+            setAllNotes(prev => ({
+                ...prev,
+                soap: { ...prev.soap, ...validationData.verified_version }
+            }));
             setValidationData(null);
         }
     };
 
-    const fetchSoap = async (retryCount = 0) => {
+    const fetchNotes = async (retryCount = 0) => {
+        setLoading(true);
         try {
             const url = sessionId 
-                ? `${API_URL}/api/session/${appointmentId}/soap?role=${role}&session_id=${sessionId}`
-                : `${API_URL}/api/session/${appointmentId}/soap?role=${role}`;
+                ? `${API_URL}/api/session/${appointmentId}/soap?role=${role}&session_id=${sessionId}&note_type=${activeTab}`
+                : `${API_URL}/api/session/${appointmentId}/soap?role=${role}&note_type=${activeTab}`;
             const res = await axios.get(url);
-            setSoapData(res.data);
-            setError(null);
-            setLoading(false);
-        } catch (err) {
-            if (err.response?.status === 404 && retryCount < 3) {
-                // If not found, wait 2 seconds and retry (to allow auto-generation to finish)
-                console.log(`SOAP not found, retrying... (${retryCount + 1}/3)`);
-                setTimeout(() => fetchSoap(retryCount + 1), 2000);
-                return;
+            
+            // Map DB columns back to friendly keys for non-SOAP tabs
+            let mappedData = {};
+            if (activeTab === 'soap') {
+                mappedData = res.data;
+            } else if (activeTab === 'dap') {
+                mappedData = {
+                    data: res.data.subjective,
+                    assessment: res.data.assessment,
+                    plan: res.data.plan
+                };
+            } else if (activeTab === 'summary') {
+                mappedData = {
+                    summary: res.data.subjective,
+                    key_issues: res.data.objective,
+                    progress: res.data.assessment,
+                    follow_up_plans: res.data.plan
+                };
             }
 
-            if (err.response?.status === 403) {
-                setError("SOAP notes are not yet available. Please wait for therapist approval.");
-            } else if (err.response?.status === 404) {
+            
+            setAllNotes(prev => ({ ...prev, [activeTab]: mappedData }));
+            setError(null);
+        } catch (err) {
+            if (err.response?.status === 404 && retryCount < 1 && activeTab === 'soap') {
+                // Auto-generate SOAP only on first load if not found
                 if (role === 'therapist') {
                     handleGenerate();
                 } else {
-                    setError("SOAP notes have not been generated yet.");
+                    setError("Notes have not been generated yet.");
                 }
+            } else if (err.response?.status === 404) {
+                // For other tabs, just leave as null so they can generate
+                setAllNotes(prev => ({ ...prev, [activeTab]: null }));
+            } else if (err.response?.status === 403) {
+                setError("Notes are not yet available. Please wait for therapist approval.");
             } else {
                 setError("An error occurred loading the notes.");
             }
+        } finally {
             setLoading(false);
         }
     };
@@ -67,11 +96,16 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
     const handleGenerate = async () => {
         setLoading(true);
         try {
+            let endpoint = activeTab;
             const url = sessionId 
-                ? `${API_URL}/api/session/${appointmentId}/soap/generate?patient_name=${patientName}&session_id=${sessionId}`
-                : `${API_URL}/api/session/${appointmentId}/soap/generate?patient_name=${patientName}`;
+                ? `${API_URL}/api/session/${appointmentId}/${endpoint}/generate?patient_name=${patientName}&session_id=${sessionId}`
+                : `${API_URL}/api/session/${appointmentId}/${endpoint}/generate?patient_name=${patientName}`;
             const res = await axios.post(url);
-            setSoapData(res.data);
+            
+            setAllNotes(prev => ({
+                ...prev,
+                [activeTab]: res.data
+            }));
             setError(null);
         } catch (err) {
             setError(err.response?.data?.detail || "Generation failed.");
@@ -81,20 +115,36 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
     };
 
     useEffect(() => {
-        fetchSoap();
-    }, [appointmentId, role]);
+        fetchNotes();
+    }, [appointmentId, role, activeTab]);
 
     const handleUpdateStatus = async (status) => {
         setSaving(true);
         try {
             const url = sessionId 
-                ? `${API_URL}/api/session/${appointmentId}/soap?session_id=${sessionId}`
-                : `${API_URL}/api/session/${appointmentId}/soap`;
-            await axios.patch(url, {
-                ...soapData,
-                status: status
-            });
-            await fetchSoap();
+                ? `${API_URL}/api/session/${appointmentId}/soap?session_id=${sessionId}&note_type=${activeTab}`
+                : `${API_URL}/api/session/${appointmentId}/soap?note_type=${activeTab}`;
+            
+            const currentData = allNotes[activeTab];
+            let dataToSave = {};
+            
+            if (activeTab === 'soap') {
+                dataToSave = { ...currentData, status };
+            } else if (activeTab === 'dap') {
+                dataToSave = { subjective: currentData.data, assessment: currentData.assessment, plan: currentData.plan, status };
+            } else if (activeTab === 'summary') {
+                dataToSave = { 
+                    subjective: currentData.summary, 
+                    objective: currentData.key_issues, 
+                    assessment: currentData.progress,
+                    plan: currentData.follow_up_plans,
+                    status 
+                };
+            }
+
+            
+            await axios.patch(url, dataToSave);
+            await fetchNotes();
             if (onStatusChange) onStatusChange(status);
         } catch (err) {
             console.error("Status update failed", err);
@@ -107,18 +157,41 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
         setSaving(true);
         try {
             const url = sessionId 
-                ? `${API_URL}/api/session/${appointmentId}/soap?session_id=${sessionId}`
-                : `${API_URL}/api/session/${appointmentId}/soap`;
-            await axios.patch(url, soapData);
+                ? `${API_URL}/api/session/${appointmentId}/soap?session_id=${sessionId}&note_type=${activeTab}`
+                : `${API_URL}/api/session/${appointmentId}/soap?note_type=${activeTab}`;
+            
+            let dataToSave = {};
+            const currentData = allNotes[activeTab];
+            
+            if (activeTab === 'soap') {
+                dataToSave = currentData;
+            } else if (activeTab === 'dap') {
+                dataToSave = {
+                    subjective: currentData.data,
+                    assessment: currentData.assessment,
+                    plan: currentData.plan
+                };
+            } else if (activeTab === 'summary') {
+                dataToSave = {
+                    subjective: currentData.summary,
+                    objective: currentData.key_issues,
+                    assessment: currentData.progress,
+                    plan: currentData.follow_up_plans
+                };
+            }
+
+            
+            await axios.patch(url, dataToSave);
             alert("Changes saved successfully.");
         } catch (err) {
             console.error("Save failed", err);
+            alert("Failed to save changes.");
         } finally {
             setSaving(false);
         }
     };
 
-    if (loading) return (
+    if (loading && !allNotes[activeTab]) return (
         <div className="loading-container">
             <Loader2 className="animate-spin" size={48} color="var(--accent)" />
             <p>Processing clinical notes...</p>
@@ -133,8 +206,8 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
         </div>
     );
 
-    const isApproved = soapData?.status === 'approved';
-    const isRejected = soapData?.status === 'rejected';
+    const currentNoteData = allNotes[activeTab];
+    const isApproved = allNotes.soap?.status === 'approved';
     const canEdit = role === 'therapist' && !isApproved;
 
     const getStatusBadgeClass = (status) => {
@@ -142,6 +215,19 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
         if (status === 'rejected') return 'soap-badge rejected';
         return 'soap-badge pending';
     };
+
+    if (!currentNoteData && !loading) return (
+        <div className="glass error-box">
+            <Sparkles size={32} style={{marginBottom: '16px', opacity: 0.5}} />
+            <h3>No {activeTab.toUpperCase()} Data</h3>
+            <p>Click generate to create {activeTab.toUpperCase()} notes.</p>
+            {role === 'therapist' && (
+                <button className="btn btn-primary" onClick={handleGenerate} style={{marginTop: '1rem'}}>
+                    Generate {activeTab.toUpperCase()}
+                </button>
+            )}
+        </div>
+    );
 
     return (
         <motion.div 
@@ -152,29 +238,32 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
             <div className="soap-header">
                 <div className="soap-title-group">
                     <div className="soap-main-title">
-                        <h2>Clinical SOAP Note</h2>
-                        <span className={getStatusBadgeClass(soapData.status)}>
-                            {soapData.status === 'approved' ? '🟢 Approved' : 
-                             soapData.status === 'rejected' ? '🔴 Rejected' : '🟡 Pending Review'}
-                        </span>
+                        <h2>Clinical Notes</h2>
+                        {activeTab === 'soap' && allNotes.soap && (
+                            <span className={getStatusBadgeClass(allNotes.soap.status)}>
+                                {allNotes.soap.status === 'approved' ? '🟢 Approved' : 
+                                 allNotes.soap.status === 'rejected' ? '🔴 Rejected' : '🟡 Pending Review'}
+                            </span>
+                        )}
                     </div>
                     <p className="soap-subtitle">
-                        {isApproved ? "This note has been reviewed and approved for the client's record." : 
-                         "Generated draft from session transcript. Review required."}
+                        Generate and review SOAP, DAP, or Session Summaries.
                     </p>
                 </div>
                 
                 {role === 'therapist' && (
                     <div className="soap-actions">
-                        <button 
-                            className="btn action-btn-secondary" 
-                            style={{background: validating ? 'rgba(59, 130, 246, 0.1)' : 'transparent'}}
-                            onClick={handleValidate} 
-                            disabled={isApproved || validating}
-                        >
-                            {validating ? <Loader2 className="animate-spin" size={18} /> : <Eye size={18} />} 
-                            Validate
-                        </button>
+                        {activeTab === 'soap' && (
+                            <button 
+                                className="btn action-btn-secondary" 
+                                style={{background: validating ? 'rgba(59, 130, 246, 0.1)' : 'transparent'}}
+                                onClick={handleValidate} 
+                                disabled={isApproved || validating}
+                            >
+                                {validating ? <Loader2 className="animate-spin" size={18} /> : <Eye size={18} />} 
+                                Validate
+                            </button>
+                        )}
 
                         <button 
                             className="btn action-btn-secondary"
@@ -184,7 +273,7 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
                             <Save size={18} /> Save
                         </button>
                         
-                        {!isApproved && (
+                        {activeTab === 'soap' && !isApproved && (
                             <button 
                                 className="btn btn-primary" 
                                 onClick={() => handleUpdateStatus('approved')} 
@@ -194,7 +283,7 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
                             </button>
                         )}
                         
-                        {!isRejected && !isApproved && (
+                        {activeTab === 'soap' && allNotes.soap?.status !== 'rejected' && !isApproved && (
                             <button 
                                 className="btn action-btn-secondary"
                                 style={{backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)'}}
@@ -205,20 +294,24 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
                             </button>
                         )}
 
-                        {isRejected && (
-                            <button 
-                                className="btn btn-primary" 
-                                onClick={handleGenerate} 
-                                disabled={saving}
-                            >
-                                <Sparkles size={18} /> Re-generate
-                            </button>
-                        )}
+                        <button 
+                            className="btn btn-primary" 
+                            onClick={handleGenerate} 
+                            disabled={saving || loading}
+                        >
+                            <Sparkles size={18} /> Re-generate
+                        </button>
                     </div>
                 )}
             </div>
 
-            {validationData?.overall_accuracy_score !== undefined && (
+            <div className="soap-tabs">
+                <button className={`tab-btn ${activeTab === 'soap' ? 'active' : ''}`} onClick={() => setActiveTab('soap')}>SOAP</button>
+                <button className={`tab-btn ${activeTab === 'dap' ? 'active' : ''}`} onClick={() => setActiveTab('dap')}>DAP</button>
+                <button className={`tab-btn ${activeTab === 'summary' ? 'active' : ''}`} onClick={() => setActiveTab('summary')}>Summary</button>
+            </div>
+
+            {activeTab === 'soap' && validationData?.overall_accuracy_score !== undefined && (
                 <div className="accuracy-banner">
                    <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
                       <Sparkles size={20} color="var(--primary)" />
@@ -231,21 +324,26 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
             )}
 
             <div className="editor-grid">
-                {['subjective', 'objective', 'assessment', 'plan'].map((field) => (
+                {currentNoteData && fieldsConfig[activeTab].map((field) => (
                     <div key={field} className="field-group">
                         <label className="field-label">{field.toUpperCase()}</label>
                         <div className="input-wrapper">
                             <textarea
                                 readOnly={!canEdit}
-                                value={soapData[field] || ''}
-                                onChange={(e) => setSoapData({ ...soapData, [field]: e.target.value })}
+                                value={currentNoteData[field] || ''}
+                                onChange={(e) => {
+                                    setAllNotes(prev => ({
+                                        ...prev,
+                                        [activeTab]: { ...prev[activeTab], [field]: e.target.value }
+                                    }));
+                                }}
                                 className="soap-textarea"
                                 style={{
                                     cursor: canEdit ? 'text' : 'default',
                                     borderColor: canEdit ? 'var(--card-border)' : 'transparent'
                                 }}
                             />
-                            {validationData?.validations[field] && (
+                            {activeTab === 'soap' && validationData?.validations[field] && (
                                 <div className="validation-stack">
                                     {validationData.validations[field].map((v, i) => (
                                         <div key={i} className={`validation-item ${v.status === 'supported' ? 'supported' : 'unsupported'}`}>
@@ -264,7 +362,7 @@ const SOAPEditor = ({ appointmentId, role = 'therapist', onStatusChange, patient
                 ))}
             </div>
 
-            {role === 'client' && isApproved && (
+            {role === 'client' && isApproved && activeTab === 'soap' && (
                 <div className="client-footer">
                     <Eye size={16} />
                     <span>This note is verified by your clinician.</span>

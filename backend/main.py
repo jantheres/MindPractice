@@ -45,11 +45,13 @@ async def init_db():
         return {"status": "error", "message": str(e)}, 500
 
 # Include routers
-from routers import consent, soap, session_ws
+from routers import consent, soap, session_ws, dashboard
 
 app.include_router(consent.router, prefix="/api/session", tags=["consent"])
 app.include_router(soap.router, prefix="/api/session", tags=["soap"])
 app.include_router(session_ws.router, prefix="/api/session", tags=["session"])
+app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
+
 
 if __name__ == "__main__":
     import uvicorn
